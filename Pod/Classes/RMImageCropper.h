@@ -9,6 +9,7 @@ typedef NS_ENUM(NSUInteger, RMImageCropperMode) {
 
 @property (nonatomic, assign) NSInteger minimum;
 @property (nonatomic, strong) UIImage * image;
+@property (nonatomic, strong) UIImage * originalImage;
 @property (nonatomic, readonly) UIImage * editedImage;
 @property (nonatomic, assign) BOOL enabled;
 @property (nonatomic, assign) RMImageCropperMode initialScale;

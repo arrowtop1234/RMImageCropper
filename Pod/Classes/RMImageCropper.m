@@ -253,7 +253,7 @@ CGFloat const RESET_DURATION = 0.10f;
 {
     CGRect frameRect = [self getFrameRect];
     CGRect imageRect = [self getImageRect];
-    UIImage *image = self.image;
+    UIImage *image = self.originalImage;
     CGFloat width = self.imageView.rm_width;
     CGFloat height = self.imageView.rm_height;
     
