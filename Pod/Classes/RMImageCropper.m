@@ -18,7 +18,7 @@
 
 CGFloat const DECELERATION_PERIOD = 0.01f;
 CGFloat const DECELERATION_BASE = 0.70f;
-CGFloat const REBOUNDING_PERIOD = 0.025f;
+CGFloat const REBOUNDING_PERIOD = 0.005f;
 CGFloat const SCALE_INCREASE_STEP = 1.04f;
 CGFloat const SCALE_DECREASE_STEP = 0.96f;
 CGFloat const RESET_DURATION = 0.10f;
@@ -58,6 +58,9 @@ CGFloat const RESET_DURATION = 0.10f;
     _minimumScale = RMImageCropperModeAspectFill;
     _imageView = [[UIImageView alloc] init];
     _imageView.userInteractionEnabled = true;
+    _imageView.contentMode = UIViewContentModeScaleAspectFill;
+    //    _imageView.layer.borderColor = [UIColor redColor].CGColor;
+    //    _imageView.layer.borderWidth = 2.;
     _scaleTransform = CGAffineTransformIdentity;
     _originalWidth = 0.0f;
     
@@ -107,7 +110,7 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (void)setImageViewToFitFrame
 {
-    CGSize minimumSize = self.initialScale == RMImageCropperModeAspectFill ? [self getMinimumFillImageViewSize] : [self getMinimumImageViewSize];
+    CGSize minimumSize = self.initialScale == RMImageCropperModeAspectFill ? [self getMinimumFillImageViewSize] : [self getMinimumImageViewSizeForModeTest:self.minimumScale];
     
     self.scaleTransform = CGAffineTransformIdentity;
     self.imageView.transform = CGAffineTransformIdentity;
@@ -130,6 +133,42 @@ CGFloat const RESET_DURATION = 0.10f;
     return [self getMinimumImageViewSizeForMode:self.minimumScale];
 }
 
+- (CGSize)getMinimumImageViewSizeForModeTest:(RMImageCropperMode)mode
+{
+    CGFloat width = self.rm_width;
+    CGFloat height = self.rm_height;
+    
+    if ([self isPortrait] && mode == RMImageCropperModeAspectFill)
+    {
+        // We have to make the image view taller so that there are no gaps on the right and left
+        height = MAX(height, width / [self getImageAspectRatio]);
+    }
+    else if ([self isPortrait] && mode == RMImageCropperModeAspectFit)
+    {
+        // We have to make the image view wide enough so that there are no gaps on the top and bottom
+        width = height * (1.0f/1.2f);
+        //        width = height * [self getImageAspectRatio];
+    }
+    else if ([self isLandscape] && mode == RMImageCropperModeAspectFill)
+    {
+        // We have to make the image view wider so that there are no gaps on top and bottom
+        width = MAX(width, height * [self getImageAspectRatio]);
+    }
+    else if ([self isLandscape] && mode == RMImageCropperModeAspectFit)
+    {
+        // We have to make the image view tall enough so that there are no gaps on the left and right
+        height = width / (16.0f/9.0f);
+        //        height = width / [self getImageAspectRatio];
+    }
+    
+    // Start of test: min cropping scale to 16:9 on landscape
+    //    if ([self isLandscape]) {
+    //        height = MAX(width * 9 / 16, width / [self getImageAspectRatio]);
+    //    }
+    
+    return CGSizeMake(width, height);
+}
+
 - (CGSize)getMinimumImageViewSizeForMode:(RMImageCropperMode)mode
 {
     CGFloat width = self.rm_width;
@@ -143,6 +182,7 @@ CGFloat const RESET_DURATION = 0.10f;
     else if ([self isPortrait] && mode == RMImageCropperModeAspectFit)
     {
         // We have to make the image view wide enough so that there are no gaps on the top and bottom
+        //        width = height * (1.0f/1.2f);
         width = height * [self getImageAspectRatio];
     }
     else if ([self isLandscape] && mode == RMImageCropperModeAspectFill)
@@ -153,8 +193,14 @@ CGFloat const RESET_DURATION = 0.10f;
     else if ([self isLandscape] && mode == RMImageCropperModeAspectFit)
     {
         // We have to make the image view tall enough so that there are no gaps on the left and right
+        //        height = width / (16.0f/9.0f);
         height = width / [self getImageAspectRatio];
     }
+    
+    // Start of test: min cropping scale to 16:9 on landscape
+    //    if ([self isLandscape]) {
+    //        height = MAX(width * 9 / 16, width / [self getImageAspectRatio]);
+    //    }
     
     return CGSizeMake(width, height);
 }
@@ -199,6 +245,7 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (CGFloat)getImageAspectRatio
 {
+    //    return 1.2f/1.f;
     return _image.size.width / _image.size.height;
 }
 
@@ -566,29 +613,27 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (void)scaleImage:(CGFloat)scale
 {
-    if ([self shouldScaleImage])
+    if (![self shouldScaleImage]) return;
+    
+    CGFloat currentSizeError = [self getSizeError];
+    
+    CGAffineTransform originalTransform = self.imageView.transform;
+    CGAffineTransform originalScaleTransform = self.scaleTransform;
+    
+    self.imageView.transform = CGAffineTransformScale(self.imageView.transform, scale, scale);
+    self.scaleTransform = CGAffineTransformScale(self.scaleTransform, scale, scale);
+    
+    CGFloat postTransformSizeError = [self getSizeError];
+    
+    if (ABS(postTransformSizeError) > ABS(currentSizeError))
     {
-        CGFloat currentSizeError = [self getSizeError];
-        
-        CGAffineTransform originalTransform = self.imageView.transform;
-        CGAffineTransform originalScaleTransform = self.scaleTransform;
-        
-        self.imageView.transform = CGAffineTransformScale(self.imageView.transform, scale, scale);
-        self.scaleTransform = CGAffineTransformScale(self.scaleTransform, scale, scale);
-        
-        CGFloat postTransformSizeError = [self getSizeError];
-        
-        if (ABS(postTransformSizeError) > ABS(currentSizeError))
-        {
-            // We have either making the image too large or too small so reduce the scaling factor towards 1
-            self.imageView.transform = originalTransform;
-            self.scaleTransform = originalScaleTransform;
-            
-            CGFloat slowingFactor = postTransformSizeError > 0.5f ? 0.0f : 1.0f - 2.0f * postTransformSizeError;
-            CGFloat adjustedScale = slowingFactor * scale + (1 - slowingFactor);
-            self.imageView.transform = CGAffineTransformScale(self.imageView.transform, adjustedScale, adjustedScale);
-            self.scaleTransform = CGAffineTransformScale(self.scaleTransform, adjustedScale, adjustedScale);
-        }
+        // We have either making the image too large or too small so reduce the scaling factor towards 1
+        self.imageView.transform = originalTransform;
+        self.scaleTransform = originalScaleTransform;
+        CGFloat slowingFactor = postTransformSizeError > 0.5f ? 0.0f : 1.0f - 2.0f * postTransformSizeError;
+        CGFloat adjustedScale = slowingFactor * scale + (1 - slowingFactor);
+        self.imageView.transform = CGAffineTransformScale(self.imageView.transform, adjustedScale, adjustedScale);
+        self.scaleTransform = CGAffineTransformScale(self.scaleTransform, adjustedScale, adjustedScale);
     }
 }
 
@@ -599,9 +644,10 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (BOOL)isImageSizeTooSmall
 {
-    CGSize minimumSize = [self getMinimumImageViewSize];
+    CGSize minimumSize = [self getMinimumImageViewSizeForModeTest:self.minimumScale];
+    //    CGSize minimumSize = [self getMinimumImageViewSize];
     
-    return self.imageView.rm_height < minimumSize.height && self.imageView.rm_width < minimumSize.width;
+    return self.imageView.rm_height < minimumSize.height || self.imageView.rm_width < minimumSize.width;
 }
 
 - (BOOL)isImageSizeTooLarge
@@ -622,7 +668,7 @@ CGFloat const RESET_DURATION = 0.10f;
         
         if (self.minimumScale == RMImageCropperModeAspectFit)
         {
-            CGSize minimumSize = [self getMinimumImageViewSize];
+            CGSize minimumSize = [self getMinimumImageViewSizeForModeTest:RMImageCropperModeAspectFit];
             frame = CGRectMake(0.0f, 0.0f, minimumSize.width, minimumSize.height);
         }
         
@@ -660,7 +706,10 @@ CGFloat const RESET_DURATION = 0.10f;
 {
     if ([self isImageSizeOutOfBounds])
     {
+        //        NSLog(@"image out of bounds");
         [self correctSizeError];
+    } else {
+        //        NSLog(@"image is not out of bounds");
     }
     
     if ([self isImageOutOfFrame])
@@ -690,6 +739,8 @@ CGFloat const RESET_DURATION = 0.10f;
         if (recognizer.state == UIGestureRecognizerStateEnded || recognizer.state == UIGestureRecognizerStateCancelled || recognizer.state == UIGestureRecognizerStateFailed)
         {
             [self correctSizeAndTranslationErrors];
+        } else {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"RMImageCropperStartedPinching" object:nil];
         }
     }
 }
@@ -805,8 +856,10 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (void)stopRebounding
 {
+    //    NSLog(@"stopped rebounding");
     [self.elasticityTimer invalidate];
     self.elasticityTimer = nil;
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"RMImageCropperEndedPinching" object:nil];
 }
 
 - (CGFloat)getReboundingStep
@@ -830,16 +883,19 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (void)reboundingStep:(NSTimer *)elasticityTimer
 {
+    
     if (![self isImageSizeOutOfBounds] || [self getSizeError] <= 0.001f || ![self shouldScaleImage])
     {
         [self stopRebounding];
     }
     else if ([self isImageSizeTooLarge])
     {
+        //        NSLog(@"scaling up");
         [self scaleImage:[self getReboundingStep]];
     }
     else if ([self isImageSizeTooSmall])
     {
+        //        NSLog(@"scaling down");
         [self scaleImage:[self getReboundingStep]];
     }
     
