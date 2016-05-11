@@ -59,8 +59,8 @@ CGFloat const RESET_DURATION = 0.10f;
     _imageView = [[UIImageView alloc] init];
     _imageView.userInteractionEnabled = true;
     _imageView.contentMode = UIViewContentModeScaleAspectFill;
-    //    _imageView.layer.borderColor = [UIColor redColor].CGColor;
-    //    _imageView.layer.borderWidth = 2.;
+//    _imageView.layer.borderColor = [UIColor redColor].CGColor;
+//    _imageView.layer.borderWidth = 2.;
     _scaleTransform = CGAffineTransformIdentity;
     _originalWidth = 0.0f;
     
@@ -76,14 +76,14 @@ CGFloat const RESET_DURATION = 0.10f;
     pinch.delegate = self;
     [self addGestureRecognizer:pinch];
     
-    UITapGestureRecognizer *doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapRecognized:)];
-    doubleTap.delegate = self;
-    doubleTap.numberOfTapsRequired = 2;
-    [self addGestureRecognizer:doubleTap];
+//    UITapGestureRecognizer *doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapRecognized:)];
+//    doubleTap.delegate = self;
+//    doubleTap.numberOfTapsRequired = 2;
+//    [self addGestureRecognizer:doubleTap];
     
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapRecognized:)];
     tap.delegate = self;
-    [tap requireGestureRecognizerToFail:doubleTap];
+//    [tap requireGestureRecognizerToFail:doubleTap];
     [self addGestureRecognizer:tap];
 }
 
@@ -158,7 +158,7 @@ CGFloat const RESET_DURATION = 0.10f;
     {
         // We have to make the image view tall enough so that there are no gaps on the left and right
         height = width / (16.0f/9.0f);
-        //        height = width / [self getImageAspectRatio];
+//        height = width / [self getImageAspectRatio];
     }
     
     // Start of test: min cropping scale to 16:9 on landscape
@@ -182,7 +182,7 @@ CGFloat const RESET_DURATION = 0.10f;
     else if ([self isPortrait] && mode == RMImageCropperModeAspectFit)
     {
         // We have to make the image view wide enough so that there are no gaps on the top and bottom
-        //        width = height * (1.0f/1.2f);
+//        width = height * (1.0f/1.2f);
         width = height * [self getImageAspectRatio];
     }
     else if ([self isLandscape] && mode == RMImageCropperModeAspectFill)
@@ -193,14 +193,14 @@ CGFloat const RESET_DURATION = 0.10f;
     else if ([self isLandscape] && mode == RMImageCropperModeAspectFit)
     {
         // We have to make the image view tall enough so that there are no gaps on the left and right
-        //        height = width / (16.0f/9.0f);
+//        height = width / (16.0f/9.0f);
         height = width / [self getImageAspectRatio];
     }
     
     // Start of test: min cropping scale to 16:9 on landscape
-    //    if ([self isLandscape]) {
-    //        height = MAX(width * 9 / 16, width / [self getImageAspectRatio]);
-    //    }
+//    if ([self isLandscape]) {
+//        height = MAX(width * 9 / 16, width / [self getImageAspectRatio]);
+//    }
     
     return CGSizeMake(width, height);
 }
@@ -245,7 +245,7 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (CGFloat)getImageAspectRatio
 {
-    //    return 1.2f/1.f;
+//    return 1.2f/1.f;
     return _image.size.width / _image.size.height;
 }
 
@@ -465,7 +465,7 @@ CGFloat const RESET_DURATION = 0.10f;
 {
     self.enabled = false;
     
-    CGSize minimumSize = scale == RMImageCropperModeAspectFill ? [self getMinimumFillImageViewSize] : [self getMinimumImageViewSize];
+    CGSize minimumSize = scale == RMImageCropperModeAspectFill ? [self getMinimumFillImageViewSize] : [self getMinimumImageViewSizeForModeTest:RMImageCropperModeAspectFit];
     
     [UIView animateWithDuration:duration animations:^{
         
@@ -645,7 +645,7 @@ CGFloat const RESET_DURATION = 0.10f;
 - (BOOL)isImageSizeTooSmall
 {
     CGSize minimumSize = [self getMinimumImageViewSizeForModeTest:self.minimumScale];
-    //    CGSize minimumSize = [self getMinimumImageViewSize];
+//    CGSize minimumSize = [self getMinimumImageViewSize];
     
     return self.imageView.rm_height < minimumSize.height || self.imageView.rm_width < minimumSize.width;
 }
@@ -706,10 +706,10 @@ CGFloat const RESET_DURATION = 0.10f;
 {
     if ([self isImageSizeOutOfBounds])
     {
-        //        NSLog(@"image out of bounds");
+//        NSLog(@"image out of bounds");
         [self correctSizeError];
     } else {
-        //        NSLog(@"image is not out of bounds");
+//        NSLog(@"image is not out of bounds");
     }
     
     if ([self isImageOutOfFrame])
@@ -856,7 +856,7 @@ CGFloat const RESET_DURATION = 0.10f;
 
 - (void)stopRebounding
 {
-    //    NSLog(@"stopped rebounding");
+//    NSLog(@"stopped rebounding");
     [self.elasticityTimer invalidate];
     self.elasticityTimer = nil;
     [[NSNotificationCenter defaultCenter] postNotificationName:@"RMImageCropperEndedPinching" object:nil];
@@ -890,12 +890,12 @@ CGFloat const RESET_DURATION = 0.10f;
     }
     else if ([self isImageSizeTooLarge])
     {
-        //        NSLog(@"scaling up");
+//        NSLog(@"scaling up");
         [self scaleImage:[self getReboundingStep]];
     }
     else if ([self isImageSizeTooSmall])
     {
-        //        NSLog(@"scaling down");
+//        NSLog(@"scaling down");
         [self scaleImage:[self getReboundingStep]];
     }
     
